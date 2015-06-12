@@ -28,7 +28,7 @@
         android:id="@+id/bottomLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
+        android:layout_above="@+id/stop_upload"
         android:background="@drawable/chat_layout_home_bg_bottombar"
         android:orientation="vertical">
 
@@ -63,9 +63,26 @@
             <include layout="@layout/chat_bottom_text_layout" />
 
             <include layout="@layout/chat_bottom_record_layout" />
+
         </LinearLayout>
 
         <include layout="@layout/chat_bottom_more_layout" />
     </LinearLayout>
+    <LinearLayout android:layout_width="match_parent"
+                  android:id="@+id/stop_upload"
+                  android:gravity="center"
+                  android:layout_alignParentBottom="true"
+                  android:orientation="horizontal"
+                  android:layout_height="wrap_content">
+        <Button android:layout_width="wrap_content"
+                android:text="Start" android:onClick="start"
+                android:layout_height="wrap_content"/>
+        <Button android:layout_width="wrap_content"
+                android:text="Stop" android:onClick="stop"
+                android:layout_height="wrap_content"/>
+        <Button android:layout_width="wrap_content"
+                android:text="Upload" android:onClick="upload"
+                android:layout_height="wrap_content"/>
 
+    </LinearLayout>
 </RelativeLayout>

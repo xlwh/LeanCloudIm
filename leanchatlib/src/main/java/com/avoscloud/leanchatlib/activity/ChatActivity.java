@@ -6,9 +6,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.os.Bundle;
+import android.os.*;
 import android.provider.MediaStore;
 import android.support.v4.view.ViewPager;
 import android.text.*;
@@ -19,10 +17,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.GridView;
-import android.widget.ListView;
-import android.widget.Toast;
+import android.widget.*;
 import com.avos.avoscloud.AVException;
 import com.avos.avoscloud.im.v2.AVIMConversation;
 import com.avos.avoscloud.im.v2.AVIMReservedMessageType;
@@ -35,6 +30,8 @@ import com.avoscloud.leanchatlib.adapter.ChatEmotionGridAdapter;
 import com.avoscloud.leanchatlib.adapter.ChatEmotionPagerAdapter;
 import com.avoscloud.leanchatlib.adapter.ChatMessageAdapter;
 import com.avoscloud.leanchatlib.controller.*;
+import com.avoscloud.leanchatlib.db.MessageDao;
+import com.avoscloud.leanchatlib.db.MockUtil;
 import com.avoscloud.leanchatlib.db.RoomsTable;
 import com.avoscloud.leanchatlib.model.ConversationType;
 import com.avoscloud.leanchatlib.model.MessageEvent;
@@ -44,9 +41,15 @@ import com.avoscloud.leanchatlib.utils.Utils;
 import com.avoscloud.leanchatlib.view.EmotionEditText;
 import com.avoscloud.leanchatlib.view.RecordButton;
 import com.avoscloud.leanchatlib.view.RefreshableView;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.listener.PauseOnScrollListener;
 import de.greenrobot.event.EventBus;
+import org.apache.http.Header;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.util.*;
@@ -79,6 +82,8 @@ public class ChatActivity extends Activity implements OnClickListener {
     protected String localCameraPath = PathUtils.getTmpPath();
     protected View addCameraBtn;
 
+    private MessageDao messageDao;
+
     public static ChatActivity getChatInstance() {
         return chatInstance;
     }
@@ -94,6 +99,8 @@ public class ChatActivity extends Activity implements OnClickListener {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chat_layout);
+        messageDao = MessageDao.getInstance(this);
+        toast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
         commonInit();
         findView();
         initEmotionPager();
@@ -726,5 +733,144 @@ public class ChatActivity extends Activity implements OnClickListener {
 
     protected void onLocationMessageViewClicked(AVIMLocationMessage locationMessage) {
 
+    }
+
+
+    // -----------------------------------------------------------------------------------------------------------------
+    Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            int index = msg.arg1;
+            if (index == 0) {
+                // txt
+                sendText(MockUtil.getText());
+            }else if (index == 1) {
+                // image
+            }else if (index == 2) {
+                // audio
+            }else if (index == 3) {
+                // location
+            }
+
+        }
+    };
+
+    boolean goooo;
+    Toast toast;
+    /**
+     * 開始
+     * @param view
+     */
+    public void start(View view) {
+        if (view != null) {
+            goooo = true;
+            view.setClickable(false);
+        }else {
+            if (!goooo) {
+                toast.setText("已停止");
+                toast.show();
+                return;
+            }
+        }
+
+        new Thread() {
+            public void run() {
+                if (MockUtil.isTimeUp()) {
+                    return;
+                }
+                Message msg = Message.obtain();
+                msg.arg1 = MockUtil.getIndex();
+                handler.sendMessage(msg);
+            }
+        }.start();
+    }
+
+    /**
+     * 結束
+     * @param view
+     */
+    public void stop(View view) {
+
+    }
+
+    /**
+     * 上傳
+     * @param view
+     */
+    public void upload(View view) {
+
+        JSONArray all = messageDao.getAll();
+        if (all.length() == 0) {
+            Toast.makeText(this, "无数据", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        // 提示框
+        final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Upload");
+        builder.setMessage("上传失败");
+        builder.setCancelable(false);
+        builder.setNegativeButton("确认", null);
+
+
+        // 按钮文字
+        final Button btn = (Button)view;
+        btn.setText("uploading ...");
+        btn.setClickable(false);
+
+
+        RequestParams params = new RequestParams();
+        params.put("act", "upload_hxs");
+        params.put("data", all.toString());
+        Log.e("jsondata", all.toString());
+
+        new AsyncHttpClient().post("http://cms.orenda.com.cn:29055/upload_data", params, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                super.onSuccess(statusCode, headers, response);
+                String hasErrors = MockUtil.getString(response, "hasErrors");
+                if ("false".equals(hasErrors)) {
+                    builder.setMessage("上传成功");
+                    messageDao.deleteAll();
+                } else {
+                    String msg = MockUtil.getString(response, "message");
+                    Log.e("upload.hasError=true", msg);
+                    builder.setMessage(msg);
+                }
+
+                btn.setText("UPLOAD");
+                btn.setClickable(true);
+                builder.show();
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                super.onFailure(statusCode, headers, responseString, throwable);
+                Log.e("onFailure1", String.valueOf(responseString) + "|" + throwable);
+                builder.show();
+                btn.setText("UPLOAD");
+                btn.setClickable(true);
+            }
+
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+                super.onFailure(statusCode, headers, throwable, errorResponse);
+                Log.e("onFailure2", String.valueOf(errorResponse) + "|" + throwable);
+                builder.show();
+                btn.setText("UPLOAD");
+                btn.setClickable(true);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                super.onFailure(statusCode, headers, throwable, errorResponse);
+                Log.e("onFailure3", String.valueOf(errorResponse) + "|" + throwable);
+                builder.show();
+                btn.setText("UPLOAD");
+                btn.setClickable(true);
+            }
+        });
     }
 }
