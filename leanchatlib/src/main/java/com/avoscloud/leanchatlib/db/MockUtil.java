@@ -19,8 +19,17 @@ public class MockUtil {
     }
 
     public static String image() {
-        return SD_PATH + "/";
+        return SD_PATH.concat("/imsend/image/image3.png");
     }
+
+    public static String video() {
+        return SD_PATH.concat("/imsend/video/video_20.mp4");
+    }
+
+    public static String voice() {
+        return SD_PATH.concat("/imsend/voice/voice_91.amr");
+    }
+
 
 
     public static int getIndex() {

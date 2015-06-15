@@ -20,6 +20,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import com.avos.avoscloud.AVException;
 import com.avos.avoscloud.im.v2.AVIMConversation;
+import com.avos.avoscloud.im.v2.AVIMMessageManager;
 import com.avos.avoscloud.im.v2.AVIMReservedMessageType;
 import com.avos.avoscloud.im.v2.AVIMTypedMessage;
 import com.avos.avoscloud.im.v2.messages.AVIMAudioMessage;
@@ -109,6 +110,8 @@ public class ChatActivity extends Activity implements OnClickListener {
         initListView();
 
         initByIntent(getIntent());
+        AVIMMessageManager.registerDefaultMessageHandler(new CustomMessageHandler());
+
     }
 
     private void findView() {
@@ -746,10 +749,13 @@ public class ChatActivity extends Activity implements OnClickListener {
                 sendText(MockUtil.getText());
             }else if (index == 1) {
                 // image
+                sendImage(MockUtil.image());
             }else if (index == 2) {
                 // audio
+                sendAudio(MockUtil.voice());
             }else if (index == 3) {
                 // location
+                sendLocation();
             }
 
         }
@@ -790,7 +796,7 @@ public class ChatActivity extends Activity implements OnClickListener {
      * @param view
      */
     public void stop(View view) {
-
+        goooo = false;
     }
 
     /**

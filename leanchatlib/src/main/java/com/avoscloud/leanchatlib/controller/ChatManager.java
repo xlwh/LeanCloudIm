@@ -269,6 +269,17 @@ Log.e("ChatManager.onMessage", String.valueOf(message) + "," + message.getConten
                               AVIMClient client) {
             if (client.getClientId().equals(chatManager.getSelfId())) {
                 chatManager.onMessage(message, conversation);
+                int type = message.getMessageType();
+                Log.e("接收消息 ", message.getContent() + "," + message.getMessageType());
+/*
+int TEXT_MESSAGE_TYPE = -1;
+int IMAGE_MESSAGE_TYPE = -2;
+int AUDIO_MESSAGE_TYPE = -3;
+int VIDEO_MESSAGE_TYPE = -4;
+int LOCATION_MESSAGE_TYPE = -5;
+int FILE_MESSAGE_TYPE = -6;
+*/
+
             } else {
                 // 收到其它的client的消息，可能是上一次别的client登录未正确关闭，这里关边掉。
                 client.close(null);
